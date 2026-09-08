@@ -1,0 +1,101 @@
+<div id="tinyscenePanel" class="draggable tsc-panel">
+    <div class="tsc-panel-header flex-container">
+        <div id="tinyscenePanelheader" class="fa-solid fa-grip drag-grabber tsc-drag-grabber" title="ลากเพื่อย้ายตำแหน่ง"></div>
+        <div class="tsc-panel-title"><i class="fa-solid fa-images"></i> TinyScene — คลังรูป &amp; คอลเลกชัน</div>
+        <div id="tinyscenePanelClose" class="fa-solid fa-circle-xmark dragClose tsc-panel-close" title="ปิด"></div>
+    </div>
+    <div class="tsc-panel-body scrollY">
+
+        <div class="tsc-section" id="tsc-entity-block" hidden>
+            <div class="tsc-section-heading" id="tsc-entity-label">ตัวละคร</div>
+            <div class="tsc-bind-row">
+                <label>พื้นหลัง</label>
+                <select id="tsc-entity-bg" class="text_pole"></select>
+            </div>
+            <div class="tsc-bind-row">
+                <label>Banner</label>
+                <select id="tsc-entity-banner" class="text_pole"></select>
+            </div>
+        </div>
+
+        <div class="tsc-section" id="tsc-persona-block" hidden>
+            <div class="tsc-section-heading" id="tsc-persona-label">Persona</div>
+            <div class="tsc-bind-row">
+                <label>พื้นหลัง</label>
+                <select id="tsc-persona-bg" class="text_pole"></select>
+            </div>
+            <div class="tsc-bind-row">
+                <label>Banner</label>
+                <select id="tsc-persona-banner" class="text_pole"></select>
+            </div>
+        </div>
+
+        <div class="tsc-section">
+            <div class="tsc-section-heading-row">
+                <div class="tsc-section-heading">คอลเลกชัน</div>
+                <button type="button" id="tsc-new-collection" class="menu_button tsc-inline-btn">
+                    <i class="fa-solid fa-plus"></i> คอลเลกชันใหม่
+                </button>
+            </div>
+            <div id="tsc-collection-list" class="tsc-collection-list"></div>
+        </div>
+
+        <div class="tsc-section">
+            <div class="tsc-section-heading">รูปในคอลเลกชันที่เลือก</div>
+            <div id="tsc-collection-images" class="tsc-image-grid"></div>
+        </div>
+
+        <div class="tsc-section">
+            <div class="tsc-section-heading-row">
+                <div class="tsc-section-heading">คลังรูปทั้งหมด</div>
+                <span id="tsc-library-count" class="tsc-hint"></span>
+            </div>
+
+            <div class="tsc-dropzone" id="tsc-dropzone">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+                <span>ลากรูปมาวาง หรือ <button type="button" id="tsc-browse-btn" class="menu_button tsc-inline-btn">เลือกไฟล์</button></span>
+                <input type="file" id="tsc-file-input" accept="image/*" multiple hidden>
+            </div>
+
+            <div class="tsc-import-row">
+                <button type="button" id="tsc-import-character" class="menu_button tsc-inline-btn">
+                    <i class="fa-solid fa-user"></i> จากการ์ดตัวละคร
+                </button>
+                <button type="button" id="tsc-import-persona" class="menu_button tsc-inline-btn">
+                    <i class="fa-solid fa-id-badge"></i> จาก persona
+                </button>
+                <button type="button" id="tsc-import-group" class="menu_button tsc-inline-btn">
+                    <i class="fa-solid fa-users"></i> จากสมาชิกกลุ่ม
+                </button>
+                <button type="button" id="tsc-import-background" class="menu_button tsc-inline-btn">
+                    <i class="fa-solid fa-mountain-sun"></i> จากพื้นหลัง ST
+                </button>
+            </div>
+
+            <div id="tsc-bg-import-list" class="tsc-bg-import-list" hidden></div>
+
+            <div id="tsc-library-grid" class="tsc-image-grid"></div>
+        </div>
+
+        <div class="tsc-crop-editor" id="tsc-crop-editor" hidden>
+            <div class="tsc-crop-editor-inner">
+                <div class="tsc-section-heading">ปรับครอปสำหรับ banner</div>
+                <div class="tsc-crop-imgwrap">
+                    <img id="tsc-crop-img" src="" alt="">
+                </div>
+                <div class="tsc-crop-actions">
+                    <button type="button" id="tsc-crop-apply" class="menu_button">
+                        <i class="fa-solid fa-check"></i> ใช้ครอปนี้
+                    </button>
+                    <button type="button" id="tsc-crop-reset" class="menu_button">
+                        <i class="fa-solid fa-rotate-left"></i> รีเซ็ต (เต็มรูป)
+                    </button>
+                    <button type="button" id="tsc-crop-cancel" class="menu_button">
+                        <i class="fa-solid fa-xmark"></i> ยกเลิก
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

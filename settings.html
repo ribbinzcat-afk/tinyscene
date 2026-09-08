@@ -1,0 +1,128 @@
+<div class="tinyscene-settings">
+    <div class="inline-drawer">
+        <div class="inline-drawer-toggle inline-drawer-header">
+            <b>TinyScene 🖼️</b>
+            <div class="inline-drawer-icon fa-solid fa-circle-chevron-down down"></div>
+        </div>
+        <div class="inline-drawer-content">
+            <label class="checkbox_label">
+                <input id="tsc-enabled" type="checkbox">
+                <span>เปิดใช้งาน TinyScene</span>
+            </label>
+            <p class="tsc-hint">คลังรูป คอลเลกชัน และการผูกกับตัวละคร/persona จัดการได้ในแผงลอย — เปิดจากปุ่มด้านล่าง หรือจากเมนูไม้กายสิทธิ์</p>
+            <button id="tsc-open-panel" type="submit" class="menu_button">
+                <i class="fa-solid fa-images"></i> เปิดคลังรูป / คอลเลกชัน
+            </button>
+
+            <hr>
+
+            <div class="tsc-section-title">พื้นหลัง</div>
+            <label class="checkbox_label">
+                <input id="tsc-bg-enabled" type="checkbox">
+                <span>ใช้พื้นหลังจากคอลเลกชัน</span>
+            </label>
+            <div class="tsc-row">
+                <label for="tsc-bg-fit">การจัดวาง</label>
+                <select id="tsc-bg-fit" class="text_pole">
+                    <option value="cover">เต็มจอ (ครอป)</option>
+                    <option value="contain">พอดีจอ (ไม่ครอป)</option>
+                    <option value="stretch">ยืดเต็มจอ</option>
+                </select>
+            </div>
+            <div class="tsc-row">
+                <label for="tsc-bg-dim">ความมืด <span id="tsc-bg-dim-val">0%</span></label>
+                <input id="tsc-bg-dim" type="range" min="0" max="80" step="5">
+            </div>
+            <div class="tsc-row">
+                <label for="tsc-bg-order">ลำดับการเวียน</label>
+                <select id="tsc-bg-order" class="text_pole">
+                    <option value="sequential">เรียงตามลำดับ</option>
+                    <option value="random">สุ่ม</option>
+                </select>
+            </div>
+            <label class="checkbox_label">
+                <input id="tsc-bg-rotate-on-message" type="checkbox">
+                <span>เปลี่ยนพื้นหลังทุกครั้งที่มีข้อความใหม่ (รวม swipe/regenerate)</span>
+            </label>
+            <div class="tsc-row">
+                <label for="tsc-bg-rotate-seconds">เวียนอัตโนมัติทุก (วินาที, 0=ปิด)</label>
+                <input id="tsc-bg-rotate-seconds" type="number" min="0" class="text_pole">
+            </div>
+            <label class="checkbox_label">
+                <input id="tsc-bg-respect-lock" type="checkbox">
+                <span>หลบให้ "Lock background to chat" ของ ST เสมอ</span>
+            </label>
+            <button id="tsc-rotate-bg-now" type="submit" class="menu_button">
+                <i class="fa-solid fa-shuffle"></i> เปลี่ยนพื้นหลังตอนนี้
+            </button>
+
+            <hr>
+
+            <div class="tsc-section-title">Banner ในฟองแชท</div>
+            <label class="checkbox_label">
+                <input id="tsc-banner-enabled" type="checkbox">
+                <span>แสดง banner ในข้อความ</span>
+            </label>
+            <div class="tsc-row">
+                <label for="tsc-banner-position">ตำแหน่ง</label>
+                <select id="tsc-banner-position" class="text_pole">
+                    <option value="below-name">ใต้ชื่อ เหนือข้อความ (แนะนำ)</option>
+                    <option value="above-name">เหนือชื่อ (เหมือนปกโปรไฟล์)</option>
+                    <option value="footer">ท้ายข้อความ</option>
+                    <option value="thumbs">แถวรูปย่อ (เลือกเองได้)</option>
+                </select>
+            </div>
+            <div class="tsc-row">
+                <label for="tsc-banner-scope">ขึ้นที่ข้อความไหน</label>
+                <select id="tsc-banner-scope" class="text_pole">
+                    <option value="turn-start">เฉพาะข้อความแรกของช่วงพูด</option>
+                    <option value="every">ทุกข้อความ</option>
+                </select>
+            </div>
+            <div class="tsc-row">
+                <label for="tsc-banner-depth">จำกัดเฉพาะ N ข้อความล่าสุด (0=ไม่จำกัด)</label>
+                <input id="tsc-banner-depth" type="number" min="0" class="text_pole">
+            </div>
+            <div class="tsc-row">
+                <label for="tsc-banner-aspect">สัดส่วนภาพ</label>
+                <select id="tsc-banner-aspect" class="text_pole">
+                    <option value="3 / 1">กว้างมาก (3:1)</option>
+                    <option value="4 / 1">กว้าง (4:1)</option>
+                    <option value="16 / 9">จอกว้าง (16:9)</option>
+                    <option value="2 / 1">ปานกลาง (2:1)</option>
+                </select>
+            </div>
+            <div class="tsc-row">
+                <label for="tsc-banner-max-h">สูงสุด (vh) โหมดปกติ</label>
+                <input id="tsc-banner-max-h" type="number" min="4" class="text_pole">
+            </div>
+            <div class="tsc-row">
+                <label for="tsc-banner-max-h-vn">สูงสุด (vh) โหมด Visual Novel</label>
+                <input id="tsc-banner-max-h-vn" type="number" min="4" class="text_pole">
+            </div>
+            <label class="checkbox_label">
+                <input id="tsc-banner-for-character" type="checkbox">
+                <span>แสดงให้ข้อความของตัวละคร</span>
+            </label>
+            <label class="checkbox_label">
+                <input id="tsc-banner-for-persona" type="checkbox">
+                <span>แสดงให้ข้อความของ persona</span>
+            </label>
+            <label class="checkbox_label">
+                <input id="tsc-banner-show-controls" type="checkbox">
+                <span>แสดงปุ่ม ‹ › เปลี่ยนรูปเองตอนชี้เมาส์</span>
+            </label>
+            <label class="checkbox_label">
+                <input id="tsc-banner-rotate-on-message" type="checkbox">
+                <span>อนุญาตให้ banner เปลี่ยนรูปเองตามข้อความ (โดยธรรมชาติจาก id ข้อความ)</span>
+            </label>
+            <div class="tsc-row">
+                <label for="tsc-banner-rotate-seconds">เวียนอัตโนมัติทุก (วินาที, 0=ปิด)</label>
+                <input id="tsc-banner-rotate-seconds" type="number" min="0" class="text_pole">
+            </div>
+            <button id="tsc-rotate-banner-now" type="submit" class="menu_button">
+                <i class="fa-solid fa-shuffle"></i> เปลี่ยน banner ตอนนี้
+            </button>
+        </div>
+    </div>
+</div>
