@@ -19,19 +19,26 @@ export const bumpBackgroundSalt = (chatId) => bump(backgroundSalt, chatId);
 
 /**
  * เลือกรูป banner สำหรับข้อความหนึ่ง — ถ้าผู้ใช้เคยเลือกรูปเองไว้ (override ใน mes.extra) จะยึดตามนั้นก่อน
- * ไม่งั้นคำนวณแบบ deterministic จาก (chatId, mesid, swipeId, salt) เพื่อให้ swipe/regenerate ได้รูปใหม่เองอัตโนมัติ
- * แต่ swipe กลับไปอันเดิมก็ได้รูปเดิมกลับมา (ไม่สุ่มทุกครั้งที่ re-render)
+ * ไม่งั้นเวียนแบบ round-robin จริงตาม "ลำดับข้อความของเจ้าของฝั่งนี้" (ownerTurnIndex) — คำนวณแยกกันระหว่าง
+ * user กับ char เพราะแต่ละฝั่งมีคลังรูปคนละชุด ถ้าใช้ mesid รวม (นับรวมทั้งสองฝั่ง) แล้วแฮชแทน จะเจอบั๊กที่
+ * user มีแค่ 2 รูป แต่ mesid ของ user เป็นเลขคู่ล้วน (0,2,4,...) โอกาสสูงที่แฮชจะตกช่องเดิมซ้ำๆ ทำให้ banner
+ * ของ user ดูเหมือนไม่เวียนเลย ทั้งที่ตั้งไว้ 2 รูป — round-robin แก้ตรงนี้เพราะรับประกันว่า ownerTurnIndex ที่
+ * ต่างกัน 1 (ข้อความถัดไปของเจ้าของเดิม) จะได้ index ต่างกันเสมอเมื่อ images.length > 1
+ * swipeId ยังมีผลเป็น offset เพิ่มเติม (deterministic ต่อ swipe เดียวกัน สลับไปมาก็ได้รูปเดิม)
  * @param {TscImage[]} images
- * @param {{chatId:string, mesid:number, swipeId:number, overrideImageId?:string}} ctx
+ * @param {{chatId:string, ownerTurnIndex:number, swipeId:number, overrideImageId?:string}} ctx
  */
-export function pickForMessage(images, { chatId, mesid, swipeId, overrideImageId }) {
+export function pickForMessage(images, { chatId, ownerTurnIndex, swipeId, overrideImageId }) {
     if (!images.length) return null;
     if (overrideImageId) {
         const found = images.find((i) => i.id === overrideImageId);
         if (found) return found;
     }
+    const n = images.length;
     const salt = getBannerSalt(chatId);
-    return pickDeterministic(images, `banner|${chatId}|${mesid}|${swipeId ?? 0}|${salt}`);
+    const swipeOffset = hash32(`banner-swipe|${chatId}|${swipeId ?? 0}`) % n;
+    const idx = (((ownerTurnIndex ?? 0) + swipeOffset + salt) % n + n) % n;
+    return images[idx];
 }
 
 /**

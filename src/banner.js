@@ -12,6 +12,15 @@ function currentChatId() {
     return getContext().getCurrentChatId?.() || "no-chat";
 }
 
+/** นับว่าข้อความนี้เป็น "ข้อความที่กี่" ของเจ้าของฝั่งนี้ (user หรือ char แยกกัน) — ใช้เวียน banner แบบ round-robin จริง */
+function getOwnerTurnIndex(chat, mesid, isUser) {
+    let count = 0;
+    for (let i = 0; i < mesid && i < (chat?.length || 0); i++) {
+        if (!!chat[i]?.is_user === isUser) count++;
+    }
+    return count;
+}
+
 /** ข้อความก่อนหน้า (ข้าม system message เล็กๆ) เพื่อดูว่านี่คือ "ข้อความแรกของช่วงพูด" หรือไม่ */
 function isTurnStart(mesEl) {
     let prev = mesEl.previousElementSibling;
@@ -130,7 +139,8 @@ export function renderBannerForMessage(messageEl, force = false) {
     const mes = ctx.chat?.[mesid];
     const swipeId = mes?.swipe_id ?? 0;
     const overrideImageId = mes?.extra?.tinyscene?.imageId;
-    const image = pickForMessage(images, { chatId: currentChatId(), mesid, swipeId, overrideImageId });
+    const ownerTurnIndex = getOwnerTurnIndex(ctx.chat, mesid, isUser);
+    const image = pickForMessage(images, { chatId: currentChatId(), ownerTurnIndex, swipeId, overrideImageId });
     if (!image) { clearBoth(); return; }
 
     if (force) messageEl.querySelector("." + BANNER_CLASS)?.removeAttribute("data-img-id");
