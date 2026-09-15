@@ -64,6 +64,13 @@ export const defaultSettings = {
         rotateSeconds: 0,
         showControls: true,
     },
+
+    // ท่อรับรูปจาก extension อื่น (เช่น scene-captured) ผ่าน event bus "scap:*" — ดู src/bridge.js
+    bridge: {
+        acceptExternalImages: true,     // เปิด = ประกาศตัวเป็นปลายทางให้ extension อื่นเลือกส่งรูปได้
+        externalCollectionName: "AI สร้าง", // คอลเลกชันที่รูปจากภายนอกจะถูกจัดเก็บ (สร้างอัตโนมัติถ้ายังไม่มี)
+        externalAutoBind: true,         // เปิด = ผูก collection นี้เป็น banner ให้อัตโนมัติ (เฉพาะตัวละคร/กลุ่มที่ยังไม่เคยผูก banner ไว้เลย)
+    },
 };
 
 function deepMerge(target, defaults) {

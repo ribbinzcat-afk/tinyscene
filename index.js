@@ -5,6 +5,7 @@ import { refreshBackground, teardownBackground, onNewMessageForBackground } from
 import { applyBannerVars } from "./src/banner-css.js";
 import { togglePanel } from "./src/ui/panel.js";
 import { loadSettingsUi, bindSettingsHandlers, syncWandButtonVisibility, WAND_BUTTON_ID } from "./src/ui/settings.js";
+import { handleDiscoverTargets, handleImageGenerated } from "./src/bridge.js";
 
 /** เพิ่มปุ่มลัดในเมนูไม้กายสิทธิ์ (#extensionsMenu) — extension third-party ไม่มี container จองไว้ให้ */
 function mountWandButton() {
@@ -56,6 +57,14 @@ jQuery(async () => {
     console.log(`[${extensionName}] Loading...`);
     try {
         getSettings(); // เติมคีย์ที่ขาดหายก่อนวาด UI ใดๆ
+
+        // ท่อรับรูปจาก extension อื่น (เช่น scene-captured) — ผูกให้เร็วที่สุดก่อน await ตัวแรก เพราะทุก
+        // extension มี loading_order เท่ากันหมด (100) ลำดับโหลดพึ่งไม่ได้ ต้นทางอาจยิง event มาได้ทุกเมื่อ
+        eventSource.on("scap:discover-targets", handleDiscoverTargets);
+        eventSource.on("scap:image-generated", async (payload) => {
+            await handleImageGenerated(payload);
+            if (payload?.accepted) onGenericRefresh();   // แบนเนอร์/พื้นหลังต้องอัปเดตทันทีถ้ารูปถูกรับจริง
+        });
 
         const settingsHtml = await $.get(`${extensionFolderPath}/settings.html`);
         $("#extensions_settings2").append(settingsHtml);

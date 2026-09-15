@@ -369,3 +369,10 @@ export function togglePanel() {
     if (isPanelOpen()) closePanel();
     else openPanel();
 }
+
+// เรียกจากท่อรับรูปข้าม extension (src/bridge.js) หลังเพิ่มรูปสำเร็จ — วาดแผงใหม่เฉพาะตอนเปิดค้างอยู่
+// ไม่ต้องเช็ค panelReady เพราะ isPanelOpen() คืน false ไปเองถ้ายังไม่เคย initPanel()
+export function refreshPanelIfOpen() {
+    if (!isPanelOpen()) return;
+    renderAll();
+}

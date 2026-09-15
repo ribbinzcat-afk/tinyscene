@@ -50,6 +50,10 @@ export function loadSettingsUi() {
     $("#tsc-banner-rotate-seconds").val(s.banner.rotateSeconds);
     $("#tsc-banner-show-controls").prop("checked", s.banner.showControls);
 
+    $("#tsc-bridge-accept").prop("checked", s.bridge.acceptExternalImages);
+    $("#tsc-bridge-collection").val(s.bridge.externalCollectionName);
+    $("#tsc-bridge-autobind").prop("checked", s.bridge.externalAutoBind);
+
     syncWandButtonVisibility();
 }
 
@@ -96,6 +100,12 @@ export function bindSettingsHandlers() {
     bindCheckbox("#tsc-banner-rotate-on-message", (v) => { getSettings().banner.rotateOnMessage = v; });
     bindValue("#tsc-banner-rotate-seconds", (v) => { getSettings().banner.rotateSeconds = Math.max(0, v); }, { number: true });
     bindCheckbox("#tsc-banner-show-controls", (v) => { getSettings().banner.showControls = v; });
+
+    bindCheckbox("#tsc-bridge-accept", (v) => { getSettings().bridge.acceptExternalImages = v; });
+    bindValue("#tsc-bridge-collection", (v) => {
+        getSettings().bridge.externalCollectionName = String(v || "").trim() || "AI สร้าง";
+    });
+    bindCheckbox("#tsc-bridge-autobind", (v) => { getSettings().bridge.externalAutoBind = v; });
 
     $(document).on("click", "#tsc-open-panel", () => togglePanel());
     $(document).on("click", "#tsc-rotate-bg-now", () => rotateBackgroundNow());

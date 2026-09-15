@@ -68,6 +68,37 @@ export async function uploadImages(files, subFolderOverride) {
     return { added, skipped };
 }
 
+/** ดึงนามสกุลไฟล์จาก URL — ใช้แทน getFileExtension() (มันอ่าน file.name ซึ่ง Blob จาก fetch ไม่มีให้) */
+function extensionFromUrl(url) {
+    const clean = String(url || "").split(/[?#]/)[0];
+    const dot = clean.lastIndexOf(".");
+    return dot === -1 ? "png" : clean.slice(dot + 1).toLowerCase();
+}
+
+/**
+ * เพิ่มรูปจาก URL ของ extension อื่นเข้าคลัง (ใช้กับท่อส่งรูปข้าม extension เช่น scene-captured ผ่าน
+ * event "scap:image-generated") — path ที่อยู่บนเซิร์ฟเวอร์ ST เอง (/user/images/...) จะถูกคัดลอกเป็นไฟล์ของ
+ * ตัวเองเสมอ ห้ามใช้ path ต้นทางตรงๆ เพราะไฟล์เดียวกันจะถูกอ้างอิงพร้อมกันทั้งจากข้อความในแชทของต้นทางและ
+ * คลังนี้ ใครลบก่อนอีกฝ่ายพัง — ส่วน URL ภายนอกเต็ม (http/https เช่น Custom API ที่ตอบเป็นลิงก์ตรง) ไม่ต้อง
+ * คัดลอก เพราะไฟล์ไม่ได้อยู่บนดิสก์เรา ไม่มีใครเป็นเจ้าของ ไม่มีปัญหา "ใครลบก่อน" (fetch() ก็ทำไม่ได้อยู่ดีถ้า
+ * ปลายทางไม่เปิด CORS ให้)
+ * @param {{url: string, name: string, w?: number, h?: number}} args
+ */
+export async function addImageFromUrl({ url, name, w = 0, h = 0 }) {
+    if (/^https?:\/\//i.test(url)) {
+        return addImage({ source: "generated", url, name, w, h });
+    }
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`โหลดรูปจากปลายทางไม่สำเร็จ (HTTP ${res.status})`);
+    const blob = await res.blob();
+    const dataUri = await getBase64Async(blob);
+    const base64Data = dataUri.split(",")[1] ?? dataUri;
+    const extension = extensionFromUrl(url);
+    const stamp = `tsc_${Date.now().toString(36)}${Math.floor(Math.random() * 1e4).toString(36)}`;
+    const path = await saveBase64AsFile(base64Data, currentSubFolder(), stamp, extension);
+    return addImage({ source: "generated", url: path, name, w, h });
+}
+
 function imageDimensions(src) {
     return new Promise((resolve) => {
         const img = new Image();
@@ -77,9 +108,10 @@ function imageDimensions(src) {
     });
 }
 
-/** ลบรูปออกจากคลัง — ถ้าเป็นรูปที่อัปโหลดเอง (ไม่ใช่การ์ด/พื้นหลังของ ST) จะลบไฟล์บนเซิร์ฟเวอร์ด้วย */
+/** ลบรูปออกจากคลัง — ถ้าเป็นไฟล์ที่เราเป็นเจ้าของเอง (อัปโหลดเอง หรือคัดลอกมาจากท่อส่งรูปข้าม extension)
+ * จะลบไฟล์บนเซิร์ฟเวอร์ด้วย ต่างจาก "การ์ด/พื้นหลังของ ST" ที่แค่อ้างอิงไฟล์คนอื่น ลบไม่ได้ */
 export async function deleteImageEverywhere(image) {
-    if (image.source === "upload" && image.url.startsWith("/user/images/")) {
+    if ((image.source === "upload" || image.source === "generated") && image.url.startsWith("/user/images/")) {
         try {
             await fetch("/api/images/delete", {
                 method: "POST",
