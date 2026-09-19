@@ -83,8 +83,27 @@
                 <label for="tsc-banner-depth">จำกัดเฉพาะ N ข้อความล่าสุด (0=ไม่จำกัด)</label>
                 <input id="tsc-banner-depth" type="number" min="0" class="text_pole">
             </div>
+            <label class="checkbox_label">
+                <input id="tsc-banner-auto-fallback" type="checkbox">
+                <span>ใช้อวตารอัตโนมัติถ้ายังไม่ได้ตั้งรูป banner (ใช้ได้ทันทีทุกตัวละคร ไม่ต้องอัปโหลด)</span>
+            </label>
             <div class="tsc-row">
-                <label for="tsc-banner-aspect">สัดส่วนภาพ</label>
+                <label for="tsc-banner-style">ทรง banner</label>
+                <select id="tsc-banner-style" class="text_pole">
+                    <option value="full">แถบเต็ม — กว้างเต็มข้อความ (ค่าเริ่มต้น)</option>
+                    <option value="side">การ์ดชิดข้าง — ชิดฝั่งเดียวกันทุกข้อความ</option>
+                    <option value="side-alt">การ์ดสลับข้าง — ตัวละครซ้าย/คุณขวา</option>
+                </select>
+            </div>
+            <div class="tsc-row" id="tsc-banner-side-row">
+                <label for="tsc-banner-side-direction">ชิดฝั่ง (เฉพาะ "การ์ดชิดข้าง")</label>
+                <select id="tsc-banner-side-direction" class="text_pole">
+                    <option value="right">ขวา</option>
+                    <option value="left">ซ้าย</option>
+                </select>
+            </div>
+            <div class="tsc-row">
+                <label for="tsc-banner-aspect">สัดส่วนภาพ (ใช้กับทรงแถบเต็มเท่านั้น)</label>
                 <select id="tsc-banner-aspect" class="text_pole">
                     <option value="3 / 1">กว้างมาก (3:1)</option>
                     <option value="4 / 1">กว้าง (4:1)</option>

@@ -23,6 +23,11 @@ export function syncWandButtonVisibility() {
     $(`#${WAND_BUTTON_ID}`).toggle(Boolean(settings.enabled));
 }
 
+/** แถว "ชิดฝั่ง" มีผลแค่กับทรง "side" (ชิดข้างเดียวกันทุกข้อความ) — "side-alt" คำนวณฝั่งเองจากผู้พูด */
+function syncSideRowVisibility(style) {
+    $("#tsc-banner-side-row").prop("hidden", style !== "side");
+}
+
 /** เติมค่าปัจจุบันลงในฟอร์มตั้งค่าตอนโหลดครั้งแรก / เปิดแท็บใหม่ */
 export function loadSettingsUi() {
     const s = getSettings();
@@ -41,6 +46,10 @@ export function loadSettingsUi() {
     $("#tsc-banner-position").val(s.banner.position);
     $("#tsc-banner-scope").val(s.banner.scope);
     $("#tsc-banner-depth").val(s.banner.depth);
+    $("#tsc-banner-auto-fallback").prop("checked", s.banner.autoFallback);
+    $("#tsc-banner-style").val(s.banner.style);
+    $("#tsc-banner-side-direction").val(s.banner.sideDirection);
+    syncSideRowVisibility(s.banner.style);
     $("#tsc-banner-aspect").val(s.banner.aspect);
     $("#tsc-banner-max-h").val(s.banner.maxHeightVh);
     $("#tsc-banner-max-h-vn").val(s.banner.maxHeightVhVN);
@@ -92,6 +101,12 @@ export function bindSettingsHandlers() {
     bindValue("#tsc-banner-position", (v) => { getSettings().banner.position = v; });
     bindValue("#tsc-banner-scope", (v) => { getSettings().banner.scope = v; });
     bindValue("#tsc-banner-depth", (v) => { getSettings().banner.depth = Math.max(0, v); }, { number: true });
+    bindCheckbox("#tsc-banner-auto-fallback", (v) => { getSettings().banner.autoFallback = v; });
+    bindValue("#tsc-banner-style", (v) => {
+        getSettings().banner.style = v;
+        syncSideRowVisibility(v);
+    });
+    bindValue("#tsc-banner-side-direction", (v) => { getSettings().banner.sideDirection = v; });
     bindValue("#tsc-banner-aspect", (v) => { getSettings().banner.aspect = v; });
     bindValue("#tsc-banner-max-h", (v) => { getSettings().banner.maxHeightVh = Math.max(4, v); }, { number: true });
     bindValue("#tsc-banner-max-h-vn", (v) => { getSettings().banner.maxHeightVhVN = Math.max(4, v); }, { number: true });

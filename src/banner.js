@@ -51,6 +51,24 @@ function controlsHtml() {
         + '</div>';
 }
 
+/** style "side" ชิดข้างเดียวกันทุกข้อความตาม sideDirection, style "side-alt" สลับข้างตามฝั่งผู้พูด (ตัวละครซ้าย/ผู้เล่นขวา) */
+function resolveSide(style, isUser, settings) {
+    if (style === "side-alt") return isUser ? "right" : "left";
+    if (style === "side") return settings.banner.sideDirection === "left" ? "left" : "right";
+    return null;
+}
+
+/**
+ * รูปอวตารที่ ST เรนเดอร์ไว้ในข้อความนี้อยู่แล้ว — ใช้เป็น banner สำรองเมื่อยังไม่มีคอลเลกชันผูกไว้
+ * ทำงานได้กับทุกตัวละคร/persona/สมาชิกแชทกลุ่มทันทีโดยไม่ต้องอัปโหลดหรือผูกอะไรเพิ่มเลย
+ */
+function resolveAutoAvatarImage(messageEl) {
+    const img = messageEl.querySelector(".mesAvatarWrapper .avatar img") || messageEl.querySelector(".avatar img");
+    const src = img?.getAttribute("src");
+    if (!src) return null;
+    return { id: "auto_" + src, url: src, crop: FULL_CROP, source: "auto" };
+}
+
 function insertAt(messageEl, el, position) {
     const block = messageEl.querySelector(".mes_block");
     if (!block) return;
@@ -77,9 +95,11 @@ function setMessageOverride(mesid, imageId) {
     ctx.saveChat?.();
 }
 
-function renderSingleBanner(messageEl, image, settings) {
+function renderSingleBanner(messageEl, image, settings, { side, showControls } = {}) {
     let el = messageEl.querySelector("." + BANNER_CLASS);
-    if (el && el.dataset.imgId === image.id) return; // ภาพเดิม ไม่ต้องสร้างใหม่ (กันกระพริบ/รีเซ็ต scroll)
+    const style = settings.banner.style || "full";
+    const sideAttr = side || "";
+    if (el && el.dataset.imgId === image.id && el.dataset.tscStyle === style && (el.dataset.tscSide || "") === sideAttr) return; // เดิมทุกอย่าง ไม่ต้องสร้างใหม่ (กันกระพริบ/รีเซ็ต scroll)
 
     const isNew = !el;
     if (!el) {
@@ -87,13 +107,18 @@ function renderSingleBanner(messageEl, image, settings) {
         el.className = BANNER_CLASS;
     }
     el.dataset.imgId = image.id;
+    el.dataset.tscStyle = style;
+    // data-tsc-side ต้องไม่มี attribute เลยเมื่อไม่ใช่ทรงด้านข้าง (setAttribute ค่า "" ก็ยังนับว่า
+    // attribute "มีอยู่" ทำให้ selector CSS [data-tsc-side] ของทรง side ดันจับ full ไปด้วย — ต้อง removeAttribute จริงๆ)
+    if (sideAttr) el.setAttribute("data-tsc-side", sideAttr); else el.removeAttribute("data-tsc-side");
     const c = image.crop || FULL_CROP;
     el.style.setProperty("--tsc-ar", settings.banner.aspect);
     el.style.setProperty("--tsc-cx", String(c.x));
     el.style.setProperty("--tsc-cy", String(c.y));
     el.style.setProperty("--tsc-cw", String(c.w || 1));
     el.style.setProperty("--tsc-ch", String(c.h || 1));
-    el.innerHTML = '<img src="' + encodeURI(image.url) + '" alt="">' + (settings.banner.showControls ? controlsHtml() : "");
+    el.innerHTML = '<img src="' + encodeURI(image.url) + '" alt="">'
+        + (showControls ? controlsHtml() : "");
 
     if (isNew) insertAt(messageEl, el, settings.banner.position);
 }
@@ -131,26 +156,35 @@ export function renderBannerForMessage(messageEl, force = false) {
     }
 
     const isUser = messageEl.getAttribute("is_user") === "true";
-    const images = resolveBannerImages(isUser);
+    let images = resolveBannerImages(isUser);
+    let autoMode = false;
+    if (!images.length && settings.banner.autoFallback) {
+        const auto = resolveAutoAvatarImage(messageEl);
+        if (auto) { images = [auto]; autoMode = true; }
+    }
     if (!images.length) { clearBoth(); return; }
 
     const ctx = getContext();
     const mesid = Number(messageEl.getAttribute("mesid"));
     const mes = ctx.chat?.[mesid];
     const swipeId = mes?.swipe_id ?? 0;
-    const overrideImageId = mes?.extra?.tinyscene?.imageId;
+    const overrideImageId = autoMode ? undefined : mes?.extra?.tinyscene?.imageId;
     const ownerTurnIndex = getOwnerTurnIndex(ctx.chat, mesid, isUser);
     const image = pickForMessage(images, { chatId: currentChatId(), ownerTurnIndex, swipeId, overrideImageId });
     if (!image) { clearBoth(); return; }
 
     if (force) messageEl.querySelector("." + BANNER_CLASS)?.removeAttribute("data-img-id");
 
-    if (settings.banner.position === "thumbs") {
+    // เวียนรูปเอง/thumbs strip ไม่มีความหมายเมื่อเหลือรูปเดียวจาก fallback — ไม่โชว์ปุ่ม/แถบให้กดเปล่าๆ
+    if (settings.banner.position === "thumbs" && !autoMode) {
         messageEl.querySelector("." + BANNER_CLASS)?.remove();
         renderThumbStrip(messageEl, images, image, settings);
     } else {
         messageEl.querySelector("." + THUMB_CLASS)?.remove();
-        renderSingleBanner(messageEl, image, settings);
+        renderSingleBanner(messageEl, image, settings, {
+            side: resolveSide(settings.banner.style, isUser, settings),
+            showControls: settings.banner.showControls && images.length > 1,
+        });
     }
 }
 

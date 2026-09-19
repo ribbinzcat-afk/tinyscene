@@ -407,6 +407,54 @@ body.waifuMode .tinyscene-banner {
     background: var(--SmartThemeQuoteColor);
 }
 
+/* ---------- ทรง "ด้านข้าง" (style side / side-alt, data-tsc-side="left"|"right") ----------
+   การ์ดแนวตั้งแคบชิดขอบใดขอบหนึ่ง + ให้ข้อความไหลอ้อม (float) — ไม่มีข้อความ/ป้ายทับรูปเลย
+   ⚠️ float ใช้ได้เต็มที่เฉพาะโหมดแชทปกติเท่านั้น: TinyMobile "เต็มบับเบิ้ล" ทำให้ .mes เป็น CSS Grid
+   และ .mes_block เป็น display:contents — banner เลยกลายเป็น grid item ของ .mes ตรงๆ ซึ่งสเปก Grid บอกชัด
+   ว่า "float และ clear ไม่มีผลกับ grid item" ผลคือใต้ TinyMobile fullWidth รูปกับข้อความจะเรียงต่อกันแบบเดิม
+   (ไม่ไหลอ้อม) เฉยๆ ไม่ใช่บั๊ก แค่ float ไม่ทำงานตามสเปก — กว้าง/ตำแหน่งยังถูกต้องเหมือนเดิมทั้งสองโหมด */
+.tinyscene-banner[data-tsc-side] {
+    width: min(52%, 260px);
+    aspect-ratio: 3 / 4;
+    max-height: none;
+    margin-bottom: 8px;
+}
+.tinyscene-banner[data-tsc-side="left"] {
+    float: left;
+    margin-right: 12px;
+}
+.tinyscene-banner[data-tsc-side="right"] {
+    float: right;
+    margin-left: 12px;
+}
+body.waifuMode .tinyscene-banner[data-tsc-side] {
+    max-height: none;
+}
+/* gradient มืดตัวขึ้นทาบมุมล่าง — ตกแต่งเฉยๆ ไม่มีข้อความ/ชื่ออะไรทับ ใช้ ::after ล้วนๆ ไม่ต้องแตะ
+   markup ใน banner.js เลย (pointer-events:none กันบังปุ่ม ‹ › ตอน hover ด้วย) */
+.tinyscene-banner[data-tsc-side]::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 45%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent);
+    pointer-events: none;
+}
+/* เคลียร์ float ก่อนถึงสื่อ/ไฟล์แนบ/ปุ่มท้ายข้อความ — กันไม่ให้สิ่งที่ไม่ใช่ข้อความหลักไปเบียดพื้นที่ข้างรูป
+   (~ = general sibling, ใช้ได้เพราะ banner ถูกแทรกก่อน .mes_text/.mes_media_wrapper เสมอที่ position
+   below-name/above-name ซึ่งเป็น 2 ตำแหน่งเดียวที่ float แล้วมีอะไรให้ไหลอ้อมจริง) */
+.tinyscene-banner[data-tsc-side] ~ .mes_media_wrapper,
+.tinyscene-banner[data-tsc-side] ~ .mes_file_wrapper {
+    clear: both;
+}
+/* กันความสูง .mes_block ยุบตามพื้นหลัง float (มาตรฐาน clearfix) — ไม่กระทบ TinyMobile fullWidth เพราะ
+   ตอนนั้น .mes_block เป็น display:contents ไปแล้ว ::after ของมันไม่ถูกสร้างเป็นกล่องจริงอยู่ดี */
+.mes_block:has(> .tinyscene-banner[data-tsc-side])::after {
+    content: "";
+    display: block;
+    clear: both;
+}
+
 .tinyscene-banner-thumbs {
     display: flex;
     gap: 6px;
