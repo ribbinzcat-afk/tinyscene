@@ -473,6 +473,59 @@ body.waifuMode .tinyscene-banner[data-tsc-side] {
     clear: both;
 }
 
+/* ---------- ทรง "hero" (data-tsc-style="hero") — เต็มขอบด้านบนของฟองจริง ----------
+   .mes_block ของ core มี overflow-x:hidden / overflow-y:clip (style.css:1508) กันเนื้อหากว้างเกินหลุดจอ —
+   ถ้าไม่ปลด negative margin ของ banner จะโดนเล็มขอบไม่ให้เต็มจริงตามที่ตั้งใจ (ชนขอบแค่ในระดับ .mes_block
+   เอง ไม่มีทางทะลุไปถึงขอบ .mes จริงได้เลยไม่ว่าจะดันแรงแค่ไหน) ปลดเฉพาะข้อความที่มี hero banner จริงอยู่
+   เท่านั้น (:has scope แคบ) ไม่กระทบข้อความทั่วไป — แลกกับความเสี่ยงเล็กน้อย: ถ้าข้อความนั้นมีคำยาวมากไม่มีที่
+   ตัดคำ (เช่น URL ยาวๆ) อาจเห็นเลื่อนแนวนอนได้ (ความเสี่ยงเดิมที่ core กันไว้ ยอมรับเพื่อแลกกับภาพเต็มขอบจริง)
+   ไม่มีผลอะไรเลยตอน TinyMobile fullWidth เปิดอยู่ เพราะตอนนั้น .mes_block เป็น display:contents ไม่มีกล่อง
+   จริงให้ overflow อยู่แล้ว (ดูคอมเมนต์ที่ banner.js คำนวณ --tsc-hero-padleft ประกอบ) */
+.mes_block:has(> .tinyscene-banner[data-tsc-style="hero"]) {
+    overflow: visible;
+}
+.tinyscene-banner[data-tsc-style="hero"] {
+    /* margin-top/left/right ถูกตั้งเป็น inline style สดจาก banner.js (applyHeroBleed) โดยวัดพิกัดจริงจาก
+       DOM แทน — แม่นกว่าคำนวณจาก padding เองเยอะ (เคยลองแล้วคลาดเคลื่อนไม่เท่ากันทั้ง 3 ด้าน) เหลือแค่
+       margin-bottom ที่กำหนดตรงนี้พอ */
+    width: auto;
+    margin-bottom: 10px;
+    border-radius: 8px 8px 0 0;
+    /* TinyMobile fullWidth: .mes_block > *:not(.ch_name) ได้แค่ grid-column บังคับ (1/-1) ไม่ได้บังคับ
+       grid-row — banner เลยไป auto-place ตกแถว 2 (แถว 1 เต็มแล้วด้วยอวตาร col1 + ch_name col2) ต้องตรึง
+       grid-row:1 เองให้ไปทับซ้อนแถวเดียวกับอวตาร/ชื่อ — ไม่กระทบโหมดปกติเลย (grid-row เฉยๆ นอก grid context) */
+    grid-row: 1;
+}
+/* ซ่อนอวตารวงกลมเล็กเฉพาะข้อความที่กำลังโชว์ hero banner จริง (ไม่ใช่ทุกข้อความ เผื่อ scope/depth ของ
+   banner จำกัดไว้ไม่ให้ทุกข้อความมี banner) — ภาพใหญ่ด้านบนทำหน้าที่แทนอวตารไปแล้ว เหลือไว้แต่ชื่อ */
+.mes:has(.tinyscene-banner[data-tsc-style="hero"]) .mesAvatarWrapper .avatar {
+    display: none;
+}
+/* เฉพาะตอน TinyMobile fullWidth: banner (grid-row:1) ทับซ้อนช่องเดียวกับ .ch_name จริงๆ ตามที่ตั้งใจ (ให้
+   ภาพเต็มแถวหัว) แต่ .tinyscene-banner มี position:relative (จาก rule กลางด้านบน) ซึ่งกติกา stacking ของ
+   CSS ระบุว่า element ที่ positioned (แม้ z-index:auto) จะวาดทับ element ที่ static เสมอไม่ว่าลำดับ DOM จะ
+   เป็นยังไง — ผลคือชื่อ/ปุ่มใน .ch_name (static ธรรมดา) หายไปอยู่ข้างใต้ภาพ ต้องดัน .ch_name ให้ positioned
+   ด้วยเพื่อกลับมาชนะ */
+.mes:has(.tinyscene-banner[data-tsc-style="hero"]) .ch_name {
+    position: relative;
+    z-index: 1;
+}
+/* ป้ายชื่อ/เวลา/ปุ่มใน .ch_name ทับอยู่บนรูปโดยตรง (ไม่เหมือนทรงอื่นที่ชื่ออยู่แยกนอกรูป) ความคมชัดของ
+   text-shadow เฉยๆ ไม่พอเมื่อรูปพื้นหลังสว่าง/ลายเยอะ (เจอจริงตอนทดสอบ) เติม gradient มืดจางๆ มุมบนให้เสมอ
+   ไม่ว่ารูปจะสว่างแค่ไหน — คนละจุดกับ gradient มุมล่างของ ::after (ตกแต่งทั้งคู่ ไม่มีข้อความอะไรของเราเองทับ) */
+.tinyscene-banner[data-tsc-style="hero"]::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 55%;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent);
+    pointer-events: none;
+    /* ::before ถูกสร้างก่อน <img> ใน DOM เสมอ (ไม่เหมือน ::after ที่มาทีหลังสุดแล้วทับ img อัตโนมัติ) พอ
+       <img> เป็น position:absolute ด้วยเหมือนกัน มันจะวาดทับ ::before อีกที (DOM ทีหลังชนะเมื่อ z-index
+       เท่ากัน) ต้องตรึง z-index ให้ ::before ชนะ img ตรงๆ */
+    z-index: 1;
+}
+
 .tinyscene-banner-thumbs {
     display: flex;
     gap: 6px;

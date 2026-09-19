@@ -100,6 +100,12 @@ function wantsTextWrap(settings) {
     return (style === "side" || style === "side-alt") && settings.banner.position === "below-name";
 }
 
+/** ทรง hero เต็มขอบด้านบนของฟองเสมอ ไม่ว่าผู้ใช้จะตั้ง position เป็นอะไรไว้ก็ตาม (ตั้งค่าอื่นไม่มีความหมาย
+ * กับภาพที่เจาะขอบเต็มด้านบนแบบนี้) */
+function effectivePosition(settings) {
+    return settings.banner.style === "hero" ? "above-name" : settings.banner.position;
+}
+
 /**
  * รวม .tinyscene-banner + .mes_text ไว้ใน wrapper เดียวกัน แล้วให้ wrapper (ไม่ใช่ .mes_text ตรงๆ) เป็นลูก
  * ของ .mes_block แทน — จำเป็นเพื่อให้ข้อความไหลอ้อมรูปได้แม้ TinyMobile "เต็มบับเบิ้ล" เปิดอยู่ (โหมดนั้นทำให้
@@ -163,7 +169,7 @@ function setMessageOverride(mesid, imageId) {
     ctx.saveChat?.();
 }
 
-function renderSingleBanner(messageEl, image, settings, { side, showControls, wrap } = {}) {
+function renderSingleBanner(messageEl, image, settings, { side, showControls, wrap, position } = {}) {
     let el = messageEl.querySelector("." + BANNER_CLASS);
     const style = settings.banner.style || "full";
     const sideAttr = side || "";
@@ -201,8 +207,29 @@ function renderSingleBanner(messageEl, image, settings, { side, showControls, wr
 
     if (isNew || needsMove) {
         if (wrapEl) wrapEl.insertBefore(el, wrapEl.firstChild); // banner ต้องมาก่อน .mes_text เสมอถึงจะ float ให้ข้อความไหลอ้อมได้
-        else insertAt(messageEl, el, settings.banner.position);
+        else insertAt(messageEl, el, position || "below-name");
     }
+
+    if (style === "hero") applyHeroBleed(messageEl, el);
+    else if (el.style.marginTop) el.style.marginTop = el.style.marginLeft = el.style.marginRight = "";
+}
+
+/**
+ * ดัน banner ให้เจาะขอบฟองพอดีเป๊ะด้วยการ "วัดจริง" จาก DOM แทนคำนวณจาก padding ของ .mes/.mes_block เอง —
+ * เคยลองคำนวณจาก padding ตรงๆ แล้วไม่ตรงความจริง (คลาดเคลื่อนไม่เท่ากันทั้ง 3 ด้าน ~4-6px ยืนยันจาก
+ * getBoundingClientRect จริงตอนเทส) เหตุผลไม่ชัดว่ามีอะไรอีกที่ร่วมกินพื้นที่ (เช่น .for_checkbox/del_checkbox
+ * ก่อน .mesAvatarWrapper) — วัดพิกัดจริงตรงๆ แม่นกว่าไล่เดากฎ CSS ที่ซ้อนกันหลายชั้นเยอะ ใช้ได้ทั้งสองโหมด
+ * (ปกติ/TinyMobile fullWidth) โดยไม่ต้องรู้เลยว่าตอนนี้ padding เท่าไหร่จริงๆ
+ */
+function applyHeroBleed(messageEl, el) {
+    el.style.marginTop = "0px";
+    el.style.marginLeft = "0px";
+    el.style.marginRight = "0px";
+    const mesRect = messageEl.getBoundingClientRect();
+    const bannerRect = el.getBoundingClientRect();
+    el.style.marginTop = (mesRect.top - bannerRect.top) + "px";
+    el.style.marginLeft = (mesRect.left - bannerRect.left) + "px";
+    el.style.marginRight = (bannerRect.right - mesRect.right) + "px";
 }
 
 function renderThumbStrip(messageEl, images, currentImage, settings) {
@@ -258,8 +285,9 @@ export function renderBannerForMessage(messageEl, force = false) {
 
     if (force) messageEl.querySelector("." + BANNER_CLASS)?.removeAttribute("data-img-id");
 
+    const position = effectivePosition(settings);
     // เวียนรูปเอง/thumbs strip ไม่มีความหมายเมื่อเหลือรูปเดียวจาก fallback — ไม่โชว์ปุ่ม/แถบให้กดเปล่าๆ
-    if (settings.banner.position === "thumbs" && !autoMode) {
+    if (position === "thumbs" && !autoMode) {
         unwrapText(messageEl);
         messageEl.querySelector("." + BANNER_CLASS)?.remove();
         renderThumbStrip(messageEl, images, image, settings);
@@ -269,6 +297,7 @@ export function renderBannerForMessage(messageEl, force = false) {
             side: resolveSide(settings.banner.style, isUser, settings),
             showControls: settings.banner.showControls && images.length > 1,
             wrap: wantsTextWrap(settings),
+            position,
         });
     }
 }
