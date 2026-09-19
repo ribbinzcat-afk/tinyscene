@@ -6,6 +6,7 @@ import { pickForMessage, bumpBannerSalt, setRotationTimer, clearRotationTimer } 
 import { FULL_CROP } from "./util.js";
 
 const BANNER_CLASS = "tinyscene-banner";
+const WRAP_CLASS = "tinyscene-banner-wrap";
 const THUMB_CLASS = "tinyscene-banner-thumbs";
 const TIMER_KEY = "tinyscene-banner-timer";
 
@@ -92,6 +93,50 @@ function resolveAutoAvatarImage(messageEl) {
     return { id: "auto_" + url, url, crop: FULL_CROP, source: "auto" };
 }
 
+/** ทรง side/side-alt ที่ position below-name ต้องการให้ข้อความไหลอ้อมรูปจริง — ใช้ได้เฉพาะ 2 เงื่อนไขนี้เท่านั้น
+ * (above-name/footer ยังใช้ float แบบเดิมล้วนๆ ไม่คุ้มความซับซ้อนของการย้าย DOM) */
+function wantsTextWrap(settings) {
+    const style = settings.banner.style;
+    return (style === "side" || style === "side-alt") && settings.banner.position === "below-name";
+}
+
+/**
+ * รวม .tinyscene-banner + .mes_text ไว้ใน wrapper เดียวกัน แล้วให้ wrapper (ไม่ใช่ .mes_text ตรงๆ) เป็นลูก
+ * ของ .mes_block แทน — จำเป็นเพื่อให้ข้อความไหลอ้อมรูปได้แม้ TinyMobile "เต็มบับเบิ้ล" เปิดอยู่ (โหมดนั้นทำให้
+ * .mes เป็น CSS Grid และ .mes_block เป็น display:contents ซึ่งดึงลูกทุกตัวของ .mes_block ขึ้นเป็น grid item
+ * ของ .mes ตรงๆ — สเปก CSS Grid ระบุชัดว่า float ไม่มีผลกับ grid item เลย) พอ banner+ข้อความอยู่ใน wrapper
+ * เดียวกัน wrapper เองต่างหากที่กลายเป็น grid item (เต็มแถวตามที่ TinyMobile ต้องการอยู่แล้ว) ส่วนข้างใน
+ * wrapper เป็น block flow ปกติของเราเอง float เลยทำงานได้เสมอไม่ว่าข้างนอกจะเป็น grid หรือไม่ก็ตาม
+ * ปลอดภัยเพราะ core ST เข้าถึง .mes_text ผ่าน .find()/.querySelector() (descendant, ไม่สนความลึก) เสมอ —
+ * ไม่มีจุดไหนใน script.js/style.css ใช้ direct-child selector ".mes_block > .mes_text" เลย (เช็คแล้ว)
+ * @returns {HTMLElement | null} wrapper element หรือ null ถ้ายังไม่มี .mes_text ให้ห่อ (เช่น render รอบแรกสุด)
+ */
+function wrapTextWithBanner(messageEl) {
+    const existing = messageEl.querySelector("." + WRAP_CLASS);
+    if (existing) return existing;
+    const block = messageEl.querySelector(".mes_block");
+    const mesText = block ? block.querySelector(":scope > .mes_text") : null;
+    if (!mesText) return null;
+    const wrap = document.createElement("div");
+    wrap.className = WRAP_CLASS;
+    mesText.replaceWith(wrap);
+    wrap.appendChild(mesText);
+    return wrap;
+}
+
+/** คืน .mes_text ให้เป็นลูกตรงของ .mes_block เหมือนเดิม + ย้าย banner (ถ้ามี) ออกมาด้วยกันไม่ให้หายไปกับ
+ * wrapper ที่ถูกลบ (ตำแหน่งจริงของ banner จะถูกจัดใหม่โดย renderSingleBanner ทันทีหลังเรียกฟังก์ชันนี้) —
+ * ต้องเรียกก่อนเสมอเมื่อไม่ต้องการโครงสร้างไหลอ้อมแล้ว (ปิด banner / เปลี่ยน style-position ออกจากเงื่อนไข
+ * wantsTextWrap / ปิด extension) */
+function unwrapText(messageEl) {
+    const wrap = messageEl.querySelector("." + WRAP_CLASS);
+    if (!wrap) return;
+    const mesText = wrap.querySelector(".mes_text");
+    const banner = wrap.querySelector("." + BANNER_CLASS);
+    if (mesText) wrap.replaceWith(mesText); else wrap.remove();
+    if (banner) insertAt(messageEl, banner, "below-name");
+}
+
 function insertAt(messageEl, el, position) {
     const block = messageEl.querySelector(".mes_block");
     if (!block) return;
@@ -118,11 +163,22 @@ function setMessageOverride(mesid, imageId) {
     ctx.saveChat?.();
 }
 
-function renderSingleBanner(messageEl, image, settings, { side, showControls } = {}) {
+function renderSingleBanner(messageEl, image, settings, { side, showControls, wrap } = {}) {
     let el = messageEl.querySelector("." + BANNER_CLASS);
     const style = settings.banner.style || "full";
     const sideAttr = side || "";
-    if (el && el.dataset.imgId === image.id && el.dataset.tscStyle === style && (el.dataset.tscSide || "") === sideAttr) return; // เดิมทุกอย่าง ไม่ต้องสร้างใหม่ (กันกระพริบ/รีเซ็ต scroll)
+
+    // จัดโครง wrap ให้ถูกต้องก่อนเสมอ (คนละเงื่อนไขกับ sameImage ด้านล่าง — สลับ position/style โดยรูปที่
+    // เลือกได้บังเอิญเป็นรูปเดิมก็ต้องย้ายโครงสร้างอยู่ดี) ไม่ต้องการ wrap แล้วต้องคืนโครงสร้างเดิมก่อนเสมอ
+    // เผื่อ wrap ค้างมาจาก render รอบก่อน (เช่น เพิ่งสลับออกจาก style side)
+    let wrapEl = null;
+    if (wrap) wrapEl = wrapTextWithBanner(messageEl);
+    else unwrapText(messageEl);
+    const desiredParent = wrapEl || messageEl.querySelector(".mes_block");
+
+    const sameImage = el && el.dataset.imgId === image.id && el.dataset.tscStyle === style && (el.dataset.tscSide || "") === sideAttr;
+    const needsMove = el && desiredParent && el.parentElement !== desiredParent;
+    if (sameImage && !needsMove) return; // เดิมทุกอย่าง ไม่ต้องสร้างใหม่ (กันกระพริบ/รีเซ็ต scroll)
 
     const isNew = !el;
     if (!el) {
@@ -143,7 +199,10 @@ function renderSingleBanner(messageEl, image, settings, { side, showControls } =
     el.innerHTML = '<img src="' + encodeURI(image.url) + '" alt="">'
         + (showControls ? controlsHtml() : "");
 
-    if (isNew) insertAt(messageEl, el, settings.banner.position);
+    if (isNew || needsMove) {
+        if (wrapEl) wrapEl.insertBefore(el, wrapEl.firstChild); // banner ต้องมาก่อน .mes_text เสมอถึงจะ float ให้ข้อความไหลอ้อมได้
+        else insertAt(messageEl, el, settings.banner.position);
+    }
 }
 
 function renderThumbStrip(messageEl, images, currentImage, settings) {
@@ -171,6 +230,7 @@ export function renderBannerForMessage(messageEl, force = false) {
     const clearBoth = () => {
         messageEl.querySelector("." + BANNER_CLASS)?.remove();
         messageEl.querySelector("." + THUMB_CLASS)?.remove();
+        unwrapText(messageEl);
     };
 
     if (!settings.enabled || !settings.banner.enabled || !shouldShowBanner(messageEl, settings)) {
@@ -200,6 +260,7 @@ export function renderBannerForMessage(messageEl, force = false) {
 
     // เวียนรูปเอง/thumbs strip ไม่มีความหมายเมื่อเหลือรูปเดียวจาก fallback — ไม่โชว์ปุ่ม/แถบให้กดเปล่าๆ
     if (settings.banner.position === "thumbs" && !autoMode) {
+        unwrapText(messageEl);
         messageEl.querySelector("." + BANNER_CLASS)?.remove();
         renderThumbStrip(messageEl, images, image, settings);
     } else {
@@ -207,6 +268,7 @@ export function renderBannerForMessage(messageEl, force = false) {
         renderSingleBanner(messageEl, image, settings, {
             side: resolveSide(settings.banner.style, isUser, settings),
             showControls: settings.banner.showControls && images.length > 1,
+            wrap: wantsTextWrap(settings),
         });
     }
 }
@@ -232,6 +294,13 @@ export function rotateBannerNow() {
 
 export function teardownBanners() {
     clearRotationTimer(TIMER_KEY);
+    // คืน .mes_text ออกจาก wrapper ก่อนเสมอ ไม่งั้น .mes_text จะหายไปพร้อม wrapper ที่ถูกลบ (ข้อความหาย!)
+    document.querySelectorAll("." + WRAP_CLASS).forEach((wrap) => {
+        const mesText = wrap.querySelector(".mes_text");
+        const banner = wrap.querySelector("." + BANNER_CLASS);
+        if (mesText) wrap.replaceWith(mesText); else wrap.remove();
+        banner?.remove();
+    });
     document.querySelectorAll("." + BANNER_CLASS + ", ." + THUMB_CLASS).forEach((el) => el.remove());
 }
 

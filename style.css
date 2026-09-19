@@ -430,6 +430,15 @@ body.waifuMode .tinyscene-banner {
 body.waifuMode .tinyscene-banner[data-tsc-side] {
     max-height: none;
 }
+/* wrapper ที่รวม banner (float) + .mes_text ไว้ด้วยกันจริงๆ ในโครง DOM (ดู wrapTextWithBanner() ใน
+   banner.js, ใช้เฉพาะ style side/side-alt + position below-name) — ทำให้ข้อความไหลอ้อมรูปได้แม้ TinyMobile
+   "เต็มบับเบิ้ล" เปิดอยู่ เพราะ wrapper (ไม่ใช่ .mes_text ตรงๆ) ต่างหากที่กลายเป็น grid item เต็มแถวของ
+   TinyMobile ข้างในยังเป็น block flow ปกติของเราเองเสมอ float เลยทำงานได้ไม่ว่าข้างนอกจะเป็น grid หรือไม่ */
+.tinyscene-banner-wrap::after {
+    content: "";
+    display: block;
+    clear: both;
+}
 /* gradient มุมล่างที่ค่อยๆ เบลนด์เข้ากับพื้นหลังแชทจริง — ใช้กับ banner ทุกทรง (full/side/side-alt) ตกแต่ง
    เฉยๆ ไม่มีข้อความ/ชื่ออะไรทับ ใช้ ::after ล้วนๆ ไม่ต้องแตะ markup ใน banner.js เลย (pointer-events:none
    กันบังปุ่ม ‹ › ตอน hover ด้วย)
