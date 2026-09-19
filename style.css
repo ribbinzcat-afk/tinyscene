@@ -430,14 +430,23 @@ body.waifuMode .tinyscene-banner {
 body.waifuMode .tinyscene-banner[data-tsc-side] {
     max-height: none;
 }
-/* gradient มืดตัวขึ้นทาบมุมล่าง — ตกแต่งเฉยๆ ไม่มีข้อความ/ชื่ออะไรทับ ใช้ ::after ล้วนๆ ไม่ต้องแตะ
-   markup ใน banner.js เลย (pointer-events:none กันบังปุ่ม ‹ › ตอน hover ด้วย) */
-.tinyscene-banner[data-tsc-side]::after {
+/* gradient มุมล่างที่ค่อยๆ เบลนด์เข้ากับพื้นหลังแชทจริง — ใช้กับ banner ทุกทรง (full/side/side-alt) ตกแต่ง
+   เฉยๆ ไม่มีข้อความ/ชื่ออะไรทับ ใช้ ::after ล้วนๆ ไม่ต้องแตะ markup ใน banner.js เลย (pointer-events:none
+   กันบังปุ่ม ‹ › ตอน hover ด้วย)
+   ใช้ --SmartThemeChatTintColor (สีเดียวกับที่ #chat ใช้เป็นพื้นหลังตัวเอง, style.css:869 ของ core) แทน
+   ดำตายตัว — ธีมสว่างสีพื้นเป็นสีอ่อน ถ้า fade ไปดำตายตัวจะเห็นเป็นแถบมืดแปลกๆ ไม่ใช่ "เบลนด์" เข้าพื้น
+   ⚠️ ผู้ใช้ตั้งความโปร่งใสของสีแชท (--SmartThemeChatTintColor) เป็น 0 ได้ (ดูพื้นหลังทะลุ) ถ้าใช้ค่านั้น
+   ตรงๆ gradient จะโปร่งใสไปด้วย = มองไม่เห็นผลอะไรเลย เขียนซ้ำ 2 บรรทัด: บรรทัดแรกใช้ค่าตรงๆ (fallback ให้
+   เบราว์เซอร์ที่ไม่รู้จัก relative color syntax) บรรทัดสองใช้ `rgb(from ... r g b)` ดึงแค่สี (hue) ทิ้ง
+   alpha เดิม บังคับให้ทึบเสมอ — เบราว์เซอร์ที่รองรับจะอ่านบรรทัดสองทับบรรทัดแรก ยังคงสีของธีมถูกต้อง
+   แค่ไม่มีทางโปร่งใสจนมองไม่เห็น */
+.tinyscene-banner::after {
     content: "";
     position: absolute;
     inset: auto 0 0 0;
     height: 45%;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent);
+    background: linear-gradient(to top, var(--SmartThemeChatTintColor), transparent);
+    background: linear-gradient(to top, rgb(from var(--SmartThemeChatTintColor) r g b / 1), transparent);
     pointer-events: none;
 }
 /* เคลียร์ float ก่อนถึงสื่อ/ไฟล์แนบ/ปุ่มท้ายข้อความ — กันไม่ให้สิ่งที่ไม่ใช่ข้อความหลักไปเบียดพื้นที่ข้างรูป

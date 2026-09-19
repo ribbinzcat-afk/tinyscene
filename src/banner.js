@@ -1,4 +1,5 @@
 import { getContext } from "../../../../extensions.js";
+import { getUserAvatar } from "../../../../personas.js";
 import { getSettings } from "./store.js";
 import { resolveBannerImages } from "./collections.js";
 import { pickForMessage, bumpBannerSalt, setRotationTimer, clearRotationTimer } from "./rotation.js";
@@ -59,6 +60,27 @@ function resolveSide(style, isUser, settings) {
 }
 
 /**
+ * ST เรนเดอร์ .avatar img ในข้อความด้วย URL ธัมบ์เนล (/thumbnail?type=...&file=...) ที่ตั้งใจให้เล็ก/เบา
+ * สำหรับวงกลมอวตาร — เอามาขยายเป็น banner ตรงๆ จะแตก/เบลอเพราะภาพต้นทางความละเอียดต่ำ ต้องแกะพารามิเตอร์
+ * แล้วต่อ URL ไฟล์เต็มความละเอียดแทน (แพตเทิร์นเดียวกับที่ importCurrentCharacterAvatar/importCurrentPersonaAvatar
+ * ใน library.js ใช้อยู่แล้ว — `characters/<avatar file>` และ `getUserAvatar(<file>)`)
+ */
+function fullResAvatarUrl(thumbSrc) {
+    try {
+        const url = new URL(thumbSrc, window.location.origin);
+        if (url.pathname !== "/thumbnail") return thumbSrc; // ไม่ใช่ thumbnail (เช่น force_avatar เป็น path เต็มอยู่แล้ว) ใช้ตรงๆ
+        const type = url.searchParams.get("type");
+        const file = url.searchParams.get("file");
+        if (!file) return thumbSrc;
+        if (type === "avatar") return `characters/${file}`;
+        if (type === "persona") return getUserAvatar(file);
+        return thumbSrc;
+    } catch {
+        return thumbSrc;
+    }
+}
+
+/**
  * รูปอวตารที่ ST เรนเดอร์ไว้ในข้อความนี้อยู่แล้ว — ใช้เป็น banner สำรองเมื่อยังไม่มีคอลเลกชันผูกไว้
  * ทำงานได้กับทุกตัวละคร/persona/สมาชิกแชทกลุ่มทันทีโดยไม่ต้องอัปโหลดหรือผูกอะไรเพิ่มเลย
  */
@@ -66,7 +88,8 @@ function resolveAutoAvatarImage(messageEl) {
     const img = messageEl.querySelector(".mesAvatarWrapper .avatar img") || messageEl.querySelector(".avatar img");
     const src = img?.getAttribute("src");
     if (!src) return null;
-    return { id: "auto_" + src, url: src, crop: FULL_CROP, source: "auto" };
+    const url = fullResAvatarUrl(src);
+    return { id: "auto_" + url, url, crop: FULL_CROP, source: "auto" };
 }
 
 function insertAt(messageEl, el, position) {
