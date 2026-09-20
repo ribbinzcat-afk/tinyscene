@@ -63,6 +63,7 @@ export function loadSettingsUi() {
     $("#tsc-banner-max-h-vn").val(s.banner.maxHeightVhVN);
     $("#tsc-banner-for-character").prop("checked", s.banner.forCharacter);
     $("#tsc-banner-for-persona").prop("checked", s.banner.forPersona);
+    $("#tsc-banner-sync-avatar").prop("checked", s.banner.syncAvatar);
     $("#tsc-banner-rotate-on-message").prop("checked", s.banner.rotateOnMessage);
     $("#tsc-banner-rotate-seconds").val(s.banner.rotateSeconds);
     $("#tsc-banner-show-controls").prop("checked", s.banner.showControls);
@@ -122,6 +123,7 @@ export function bindSettingsHandlers() {
     bindValue("#tsc-banner-max-h-vn", (v) => { getSettings().banner.maxHeightVhVN = Math.max(4, v); }, { number: true });
     bindCheckbox("#tsc-banner-for-character", (v) => { getSettings().banner.forCharacter = v; });
     bindCheckbox("#tsc-banner-for-persona", (v) => { getSettings().banner.forPersona = v; });
+    bindCheckbox("#tsc-banner-sync-avatar", (v) => { getSettings().banner.syncAvatar = v; });
     bindCheckbox("#tsc-banner-rotate-on-message", (v) => { getSettings().banner.rotateOnMessage = v; });
     bindValue("#tsc-banner-rotate-seconds", (v) => { getSettings().banner.rotateSeconds = Math.max(0, v); }, { number: true });
     bindCheckbox("#tsc-banner-show-controls", (v) => { getSettings().banner.showControls = v; });

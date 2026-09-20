@@ -254,12 +254,58 @@ function renderThumbStrip(messageEl, images, currentImage, settings) {
 }
 
 /**
+ * คืน src เดิมของอวตารที่เคยเซฟไว้ก่อนสลับไปใช้รูป banner — เรียกเมื่อไม่ต้องการ sync แล้ว (ปิด toggle,
+ * ปิด extension, ข้อความนี้ไม่มีรูปให้ผูกอีกต่อไป) กันอวตารค้างเป็นรูปเก่าตลอดไป
+ */
+function restoreAvatarSrc(img) {
+    if (!img || img.dataset.tscOrigSrc === undefined) return;
+    img.setAttribute("src", img.dataset.tscOrigSrc);
+    delete img.dataset.tscOrigSrc;
+}
+
+/**
+ * ทำให้อวตารวงกลมเล็กของ ST เองหมุนตามรูปเดียวกับ banner ของข้อความนั้น — ใช้ pick logic ชุดเดียวกับ banner
+ * เป๊ะ (ownerTurnIndex/swipeId/salt) ให้ได้รูปตรงกันเสมอเมื่อทั้งคู่แสดงพร้อมกัน แต่ **เป็นอิสระจาก
+ * shouldShowBanner()** (scope/depth ของ banner) โดยตั้งใจ — อวตารควรอัปเดตทุกข้อความสม่ำเสมอ ไม่ใช่โผล่ๆ
+ * หายๆ ตามการตั้งค่าความถี่ของ banner ซึ่งออกแบบมาสำหรับกล่องรูปใหญ่ที่กินพื้นที่ ไม่ใช่อวตารเล็กๆ ข้างชื่อ
+ * ตั้งใจใช้ resolveBannerImages() ตรงๆ (ไม่ผ่าน auto-fallback) — auto-fallback เอาอวตารเดิมมาทำเป็นรูป
+ * banner อยู่แล้ว หมุนอวตารกลับไปหาตัวเองไม่มีความหมาย ต้องมีคอลเลกชันผูกไว้จริงเท่านั้นถึงจะเข้าเงื่อนไข
+ */
+function applyAvatarSync(messageEl, settings) {
+    const img = messageEl.querySelector(".mesAvatarWrapper .avatar img") || messageEl.querySelector(".avatar img");
+    if (!img) return;
+
+    const isUser = messageEl.getAttribute("is_user") === "true";
+    const enabled = settings.enabled && settings.banner.syncAvatar
+        && (isUser ? settings.banner.forPersona : settings.banner.forCharacter);
+    if (!enabled) { restoreAvatarSrc(img); return; }
+
+    const images = resolveBannerImages(isUser);
+    if (!images.length) { restoreAvatarSrc(img); return; }
+
+    const ctx = getContext();
+    const mesid = Number(messageEl.getAttribute("mesid"));
+    const mes = ctx.chat?.[mesid];
+    const swipeId = mes?.swipe_id ?? 0;
+    const overrideImageId = mes?.extra?.tinyscene?.imageId;
+    const ownerTurnIndex = getOwnerTurnIndex(ctx.chat, mesid, isUser);
+    const image = pickForMessage(images, { chatId: currentChatId(), ownerTurnIndex, swipeId, overrideImageId });
+    if (!image) { restoreAvatarSrc(img); return; }
+
+    if (img.dataset.tscOrigSrc === undefined) img.dataset.tscOrigSrc = img.getAttribute("src") || "";
+    const newSrc = encodeURI(image.url);
+    if (img.getAttribute("src") !== newSrc) img.setAttribute("src", newSrc);
+}
+
+/**
  * วาด/อัปเดต banner ของข้อความเดียว ตามการตั้งค่าปัจจุบัน
  * @param {HTMLElement} messageEl  .mes
  * @param {boolean} [force] บังคับสร้างใหม่ (ใช้หลังผู้ใช้กดเปลี่ยนรูปเอง)
  */
 export function renderBannerForMessage(messageEl, force = false) {
     const settings = getSettings();
+    applyAvatarSync(messageEl, settings);
+
     const clearBoth = () => {
         messageEl.querySelector("." + BANNER_CLASS)?.remove();
         messageEl.querySelector("." + THUMB_CLASS)?.remove();
@@ -337,6 +383,8 @@ export function teardownBanners() {
         banner?.remove();
     });
     document.querySelectorAll("." + BANNER_CLASS + ", ." + THUMB_CLASS).forEach((el) => el.remove());
+    // คืนอวตารทุกข้อความที่เคยถูก sync ไว้ กลับเป็นรูปเดิมของ ST เอง
+    document.querySelectorAll("[data-tsc-orig-src]").forEach((img) => restoreAvatarSrc(img));
 }
 
 function cycleOverride(messageEl, direction) {
