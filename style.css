@@ -439,24 +439,40 @@ body.waifuMode .tinyscene-banner[data-tsc-side] {
     display: block;
     clear: both;
 }
-/* gradient มุมล่างที่ค่อยๆ เบลนด์เข้ากับพื้นหลังแชทจริง — ใช้กับ banner ทุกทรง (full/side/side-alt) ตกแต่ง
-   เฉยๆ ไม่มีข้อความ/ชื่ออะไรทับ ใช้ ::after ล้วนๆ ไม่ต้องแตะ markup ใน banner.js เลย (pointer-events:none
-   กันบังปุ่ม ‹ › ตอน hover ด้วย)
-   ใช้ --SmartThemeChatTintColor (สีเดียวกับที่ #chat ใช้เป็นพื้นหลังตัวเอง, style.css:869 ของ core) แทน
-   ดำตายตัว — ธีมสว่างสีพื้นเป็นสีอ่อน ถ้า fade ไปดำตายตัวจะเห็นเป็นแถบมืดแปลกๆ ไม่ใช่ "เบลนด์" เข้าพื้น
-   ⚠️ ผู้ใช้ตั้งความโปร่งใสของสีแชท (--SmartThemeChatTintColor) เป็น 0 ได้ (ดูพื้นหลังทะลุ) ถ้าใช้ค่านั้น
-   ตรงๆ gradient จะโปร่งใสไปด้วย = มองไม่เห็นผลอะไรเลย เขียนซ้ำ 2 บรรทัด: บรรทัดแรกใช้ค่าตรงๆ (fallback ให้
-   เบราว์เซอร์ที่ไม่รู้จัก relative color syntax) บรรทัดสองใช้ `rgb(from ... r g b)` ดึงแค่สี (hue) ทิ้ง
-   alpha เดิม บังคับให้ทึบเสมอ — เบราว์เซอร์ที่รองรับจะอ่านบรรทัดสองทับบรรทัดแรก ยังคงสีของธีมถูกต้อง
-   แค่ไม่มีทางโปร่งใสจนมองไม่เห็น */
-.tinyscene-banner::after {
-    content: "";
-    position: absolute;
-    inset: auto 0 0 0;
-    height: 45%;
-    background: linear-gradient(to top, var(--SmartThemeChatTintColor), transparent);
-    background: linear-gradient(to top, rgb(from var(--SmartThemeChatTintColor) r g b / 1), transparent);
-    pointer-events: none;
+/* เบลนด์มุมล่างเข้ากับพื้นหลังจริง — ใช้กับทุกทรงยกเว้น hero (hero มีวิธีของตัวเองด้านล่าง เพราะชื่อทับอยู่บน
+   รูปโดยตรง ต้องการความคมชัด ไม่ใช่ความโปร่งใส) เดิมทำด้วย ::after เป็น gradient สี (พยายามจับสีให้ตรงกับ
+   --SmartThemeChatTintColor) แต่ผู้ใช้ตั้งความทึบของพื้นหลังแชท/user/ai แยกกันคนละค่ากันได้ — gradient ที่
+   ล็อกสีจาก --SmartThemeChatTintColor เพียงค่าเดียวเลยเห็นเป็นแผ่นสีที่ไม่ตรงกับพื้นจริงรอบๆ ชัดเจน (ผู้ใช้
+   ทดสอบแล้วเจอเอง) แก้ให้ถูกต้องเสมอไม่ว่าธีม/ความโปร่งใสจะตั้งเป็นอะไร: ใช้ mask-image ไล่ "ความโปร่งใสของ
+   ภาพเอง" แทนการวาดสีทับ — ไม่มีสีของเราเองเลยสักพิกเซล ที่ไหนที่รูปจางลงก็คือเห็นสิ่งที่อยู่จริงข้างหลัง
+   (พื้นหลังของฟองข้อความจริงๆ ไม่ว่าจะทึบ/โปร่งแค่ไหนก็ตรงเป๊ะเสมอ เพราะเราไม่ได้ใส่สีอะไรของเราเองเข้าไปแข่ง) */
+.tinyscene-banner:not([data-tsc-style="hero"]) {
+    -webkit-mask-image: linear-gradient(to top, transparent 0%, black 45%, black 100%);
+    mask-image: linear-gradient(to top, transparent 0%, black 45%, black 100%);
+}
+/* ทรงด้านข้าง: เบลนด์ขอบในที่ชิดข้อความด้วย (ซ้าย=ขอบขวา, ขวา=ขอบซ้าย) พร้อมกับมุมล่างเดิม — ต้องรวม 2
+   mask-image เข้าด้วยกันด้วย mask-composite:intersect (คูณค่าความทึบจากทั้ง 2 ชั้นเข้าด้วยกัน จุดไหนชั้นใด
+   ชั้นหนึ่งจางก็จางตาม ไม่ใช่ค่าเฉลี่ย) — ประกาศทั้ง -webkit-mask-composite (เบราว์เซอร์เก่า, ค่า source-in
+   ใกล้เคียง intersect ที่สุดในไวยากรณ์เก่า) และ mask-composite มาตรฐานคู่กัน เบราว์เซอร์จะเลือกอันที่รู้จัก */
+.tinyscene-banner[data-tsc-side="left"] {
+    -webkit-mask-image:
+        linear-gradient(to top, transparent 0%, black 40%, black 100%),
+        linear-gradient(to left, transparent 0%, black 35%, black 100%);
+    mask-image:
+        linear-gradient(to top, transparent 0%, black 40%, black 100%),
+        linear-gradient(to left, transparent 0%, black 35%, black 100%);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+}
+.tinyscene-banner[data-tsc-side="right"] {
+    -webkit-mask-image:
+        linear-gradient(to top, transparent 0%, black 40%, black 100%),
+        linear-gradient(to right, transparent 0%, black 35%, black 100%);
+    mask-image:
+        linear-gradient(to top, transparent 0%, black 40%, black 100%),
+        linear-gradient(to right, transparent 0%, black 35%, black 100%);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
 }
 /* เคลียร์ float ก่อนถึงสื่อ/ไฟล์แนบ/ปุ่มท้ายข้อความ — กันไม่ให้สิ่งที่ไม่ใช่ข้อความหลักไปเบียดพื้นที่ข้างรูป
    (~ = general sibling, ใช้ได้เพราะ banner ถูกแทรกก่อน .mes_text/.mes_media_wrapper เสมอที่ position
@@ -505,25 +521,45 @@ body.waifuMode .tinyscene-banner[data-tsc-side] {
    ภาพเต็มแถวหัว) แต่ .tinyscene-banner มี position:relative (จาก rule กลางด้านบน) ซึ่งกติกา stacking ของ
    CSS ระบุว่า element ที่ positioned (แม้ z-index:auto) จะวาดทับ element ที่ static เสมอไม่ว่าลำดับ DOM จะ
    เป็นยังไง — ผลคือชื่อ/ปุ่มใน .ch_name (static ธรรมดา) หายไปอยู่ข้างใต้ภาพ ต้องดัน .ch_name ให้ positioned
-   ด้วยเพื่อกลับมาชนะ */
+   ด้วยเพื่อกลับมาชนะ ระวังปุ่ม "..."/แก้ไข ข้างในด้วย (.mes_buttons/.mes_edit_buttons) — ตรึง z-index ให้
+   ทั้งคู่ชัดๆ แยกต่างหาก กันเคสที่ธีมของผู้ใช้สร้าง stacking context ใหม่ระหว่างทางจนลูกไม่ได้พลอยได้ z-index
+   ของพ่อไปด้วยอัตโนมัติ (ปุ่มค้างอยู่ใต้รูป กดไม่ได้ — ผู้ใช้เจอเอง) */
 .mes:has(.tinyscene-banner[data-tsc-style="hero"]) .ch_name {
+    position: relative;
+    z-index: 1;
+    /* ดันชื่อ+ปุ่มลงไปอยู่ขอบล่างของแถวเดียวกับรูป (แถวสูงเท่ารูปเพราะ banner กับ ch_name ใช้ grid-row
+       เดียวกัน) แทนที่จะค้างอยู่บนสุดชิดขอบภาพ — ให้เหมือนป้ายชื่อ hero banner ทั่วไปที่ชื่อลอยอยู่มุมล่าง
+       ของภาพ ไม่กระทบโหมดแชทปกติ (align-self ไม่มีผลนอก grid context) */
+    align-self: end;
+}
+.mes:has(.tinyscene-banner[data-tsc-style="hero"]) .mes_buttons,
+.mes:has(.tinyscene-banner[data-tsc-style="hero"]) .mes_edit_buttons {
     position: relative;
     z-index: 1;
 }
 /* ป้ายชื่อ/เวลา/ปุ่มใน .ch_name ทับอยู่บนรูปโดยตรง (ไม่เหมือนทรงอื่นที่ชื่ออยู่แยกนอกรูป) ความคมชัดของ
-   text-shadow เฉยๆ ไม่พอเมื่อรูปพื้นหลังสว่าง/ลายเยอะ (เจอจริงตอนทดสอบ) เติม gradient มืดจางๆ มุมบนให้เสมอ
-   ไม่ว่ารูปจะสว่างแค่ไหน — คนละจุดกับ gradient มุมล่างของ ::after (ตกแต่งทั้งคู่ ไม่มีข้อความอะไรของเราเองทับ) */
+   text-shadow เฉยๆ ไม่พอเมื่อรูปพื้นหลังสว่าง/ลายเยอะ (เจอจริงตอนทดสอบ) เติม gradient มืดจางๆ ให้เสมอไม่ว่า
+   รูปจะสว่างแค่ไหน — ตอนนี้ชื่ออยู่มุมล่างแล้ว (align-self:end ด้านบน) ย้าย gradient นี้ลงมาให้ตรงกันด้วย
+   ตั้งใจใช้สีดำเรียบๆ ตายตัว **ไม่ผูกกับสีธีม** ต่างจาก gradient เบลนด์พื้นหลังของทรงอื่น (mask-image ด้านบน)
+   เพราะจุดประสงค์คนละอย่าง: อันนี้ทำเพื่อให้ตัวอักษรอ่านออก (ต้องการความคมชัด) ไม่ใช่เพื่อเบลนด์เข้าพื้นหลัง
+   (ต้องการความโปร่งใส) — ใช้สีธีมกับจุดนี้จะพังพอๆ กับปัญหาที่เจอในทรงอื่น */
 .tinyscene-banner[data-tsc-style="hero"]::before {
     content: "";
     position: absolute;
-    inset: 0 0 auto 0;
+    inset: auto 0 0 0;
     height: 55%;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.55), transparent);
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
     pointer-events: none;
     /* ::before ถูกสร้างก่อน <img> ใน DOM เสมอ (ไม่เหมือน ::after ที่มาทีหลังสุดแล้วทับ img อัตโนมัติ) พอ
        <img> เป็น position:absolute ด้วยเหมือนกัน มันจะวาดทับ ::before อีกที (DOM ทีหลังชนะเมื่อ z-index
        เท่ากัน) ต้องตรึง z-index ให้ ::before ชนะ img ตรงๆ */
     z-index: 1;
+}
+/* กันเหนียวอีกชั้นนอกจาก gradient ด้านบน — เงาตัวอักษรหนาๆ ติดกับตัวหนังสือเองโดยตรง ไม่ใช่แผ่นสีคลุมพื้นที่
+   เลยไม่เสี่ยงกลายเป็น "แผ่นสีที่ไม่ตรงกับพื้นหลัง" แบบที่ผู้ใช้เจอปัญหามาก่อน (แก้ไปแล้วในทรงอื่น) */
+.mes:has(.tinyscene-banner[data-tsc-style="hero"]) .ch_name .name_text,
+.mes:has(.tinyscene-banner[data-tsc-style="hero"]) .ch_name .timestamp {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 1px 6px rgba(0, 0, 0, 0.9);
 }
 
 .tinyscene-banner-thumbs {

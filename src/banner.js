@@ -3,7 +3,7 @@ import { getUserAvatar } from "../../../../personas.js";
 import { getSettings } from "./store.js";
 import { resolveBannerImages } from "./collections.js";
 import { pickForMessage, bumpBannerSalt, setRotationTimer, clearRotationTimer } from "./rotation.js";
-import { FULL_CROP } from "./util.js";
+import { FULL_CROP, debounceKeyed } from "./util.js";
 
 const BANNER_CLASS = "tinyscene-banner";
 const WRAP_CLASS = "tinyscene-banner-wrap";
@@ -365,5 +365,18 @@ export function bindBannerEvents() {
         const mesid = Number(messageEl.getAttribute("mesid"));
         setMessageOverride(mesid, $(this).data("img-id"));
         renderBannerForMessage(messageEl, true);
+    });
+
+    // margin ของ hero ถูก "วัดจริง" ครั้งเดียวตอน render (ดู applyHeroBleed) ถ้า viewport เปลี่ยนหลังจากนั้น
+    // (หมุนจอมือถือ, แถบ URL ยุบ/ขยาย, หรือ media query ของ extension อื่นอย่าง TinyMobile เปลี่ยนโหมดกลางทาง
+    // โดยที่ settings ของเราเองไม่ได้เปลี่ยนเลย — renderBannerForMessage เลยข้ามการคำนวณใหม่เพราะเช็คแค่
+    // imgId/style/side ไม่ได้เช็ค viewport) ค่าที่ cache ไว้จะเพี้ยนจากของจริงทันที ต้องวัดใหม่ทุกครั้งที่ resize
+    window.addEventListener("resize", () => {
+        debounceKeyed("tinyscene-hero-resize", () => {
+            document.querySelectorAll('#chat .mes .tinyscene-banner[data-tsc-style="hero"]').forEach((el) => {
+                const mes = el.closest(".mes");
+                if (mes) applyHeroBleed(mes, el);
+            });
+        }, 150);
     });
 }
