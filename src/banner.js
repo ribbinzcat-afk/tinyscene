@@ -182,7 +182,9 @@ function renderSingleBanner(messageEl, image, settings, { side, showControls, wr
     else unwrapText(messageEl);
     const desiredParent = wrapEl || messageEl.querySelector(".mes_block");
 
-    const sameImage = el && el.dataset.imgId === image.id && el.dataset.tscStyle === style && (el.dataset.tscSide || "") === sideAttr;
+    const heroScrimAttr = style === "hero" ? (settings.banner.heroNameScrim ? "on" : "off") : "";
+    const sameImage = el && el.dataset.imgId === image.id && el.dataset.tscStyle === style
+        && (el.dataset.tscSide || "") === sideAttr && (el.getAttribute("data-tsc-name-scrim") || "") === heroScrimAttr;
     const needsMove = el && desiredParent && el.parentElement !== desiredParent;
     if (sameImage && !needsMove) return; // เดิมทุกอย่าง ไม่ต้องสร้างใหม่ (กันกระพริบ/รีเซ็ต scroll)
 
@@ -196,6 +198,10 @@ function renderSingleBanner(messageEl, image, settings, { side, showControls, wr
     // data-tsc-side ต้องไม่มี attribute เลยเมื่อไม่ใช่ทรงด้านข้าง (setAttribute ค่า "" ก็ยังนับว่า
     // attribute "มีอยู่" ทำให้ selector CSS [data-tsc-side] ของทรง side ดันจับ full ไปด้วย — ต้อง removeAttribute จริงๆ)
     if (sideAttr) el.setAttribute("data-tsc-side", sideAttr); else el.removeAttribute("data-tsc-side");
+    // เงามืดรองพื้นชื่อ (::before) ของทรง hero — ให้ผู้ใช้เลือกปิดได้เอง (ยอมรับความเสี่ยงชื่ออ่านไม่ออกเอง
+    // ถ้าอยากได้ความโปร่งใสเต็มที่แทน) ดู heroNameScrim ใน store.js
+    if (style === "hero") el.setAttribute("data-tsc-name-scrim", settings.banner.heroNameScrim ? "on" : "off");
+    else el.removeAttribute("data-tsc-name-scrim");
     const c = image.crop || FULL_CROP;
     el.style.setProperty("--tsc-ar", settings.banner.aspect);
     el.style.setProperty("--tsc-cx", String(c.x));

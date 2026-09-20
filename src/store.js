@@ -74,6 +74,9 @@ export const defaultSettings = {
         style: "full",
         // ใช้กับ style "side" เท่านั้น — ฝั่งที่การ์ดจะชิด
         sideDirection: "right",
+        // ใช้กับ style "hero" เท่านั้น — ชื่อ/เวลาลอยทับบนรูปโดยตรง เปิดไว้ = มีเงามืดรองพื้นกันชื่ออ่านไม่ออก
+        // เมื่อรูปสว่าง/ลายเยอะ ปิด = โปร่งใสเต็มที่ไม่มีเงาเลย (เสี่ยงอ่านชื่อไม่ออกถ้ารูปตรงจุดนั้นสว่าง)
+        heroNameScrim: true,
     },
 
     // ท่อรับรูปจาก extension อื่น (เช่น scene-captured) ผ่าน event bus "scap:*" — ดู src/bridge.js

@@ -29,7 +29,9 @@ function syncSideRowVisibility(style) {
 }
 
 function syncHeroHintVisibility(style) {
-    $("#tsc-banner-hero-hint").prop("hidden", style !== "hero");
+    const isHero = style === "hero";
+    $("#tsc-banner-hero-hint").prop("hidden", !isHero);
+    $("#tsc-banner-hero-scrim-row").prop("hidden", !isHero);
 }
 
 /** เติมค่าปัจจุบันลงในฟอร์มตั้งค่าตอนโหลดครั้งแรก / เปิดแท็บใหม่ */
@@ -53,6 +55,7 @@ export function loadSettingsUi() {
     $("#tsc-banner-auto-fallback").prop("checked", s.banner.autoFallback);
     $("#tsc-banner-style").val(s.banner.style);
     $("#tsc-banner-side-direction").val(s.banner.sideDirection);
+    $("#tsc-banner-hero-scrim").prop("checked", s.banner.heroNameScrim);
     syncSideRowVisibility(s.banner.style);
     syncHeroHintVisibility(s.banner.style);
     $("#tsc-banner-aspect").val(s.banner.aspect);
@@ -113,6 +116,7 @@ export function bindSettingsHandlers() {
         syncHeroHintVisibility(v);
     });
     bindValue("#tsc-banner-side-direction", (v) => { getSettings().banner.sideDirection = v; });
+    bindCheckbox("#tsc-banner-hero-scrim", (v) => { getSettings().banner.heroNameScrim = v; });
     bindValue("#tsc-banner-aspect", (v) => { getSettings().banner.aspect = v; });
     bindValue("#tsc-banner-max-h", (v) => { getSettings().banner.maxHeightVh = Math.max(4, v); }, { number: true });
     bindValue("#tsc-banner-max-h-vn", (v) => { getSettings().banner.maxHeightVhVN = Math.max(4, v); }, { number: true });
